@@ -52,3 +52,4 @@ htmlcov/
 
 # Session/runtime artifacts
 .copilot/
+.github/
