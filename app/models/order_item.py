@@ -1,4 +1,4 @@
-from sqlalchemy import CheckConstraint, Decimal, ForeignKey, Integer
+from sqlalchemy import CheckConstraint, ForeignKey, Integer, Numeric
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -17,7 +17,7 @@ class OrderItem(Base):
         nullable=False,
     )
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
-    unit_price: Mapped[float] = mapped_column(Decimal(10, 2), nullable=False)
+    unit_price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
 
     __table_args__ = (
         CheckConstraint("quantity > 0", name="order_items_quantity_positive"),
