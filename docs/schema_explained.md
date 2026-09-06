@@ -1,6 +1,6 @@
 # schema.sql Explained (Line-by-Line)
 
-This document explains each line of `db/schema.sql` in beginner-friendly terms.
+This document explains each line of `schema.sql` in beginner-friendly terms.
 
 ---
 
