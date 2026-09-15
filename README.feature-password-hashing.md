@@ -12,9 +12,10 @@ The current auth example is intentionally simple, but storing or comparing plain
 
 ## Planned Work
 
-- hash passwords before saving new users
-- verify the stored hash during login
-- keep the implementation simple and readable for MVP scope
+- hash passwords before saving new users with Python's built-in PBKDF2 helper
+- verify the stored hash during login with a constant-time comparison
+- document salts, iteration counts, and encoded storage in beginner-friendly
+  code comments
 
 ## Expected Result
 
