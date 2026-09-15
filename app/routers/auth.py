@@ -10,6 +10,11 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 def register_user(request: RegisterRequest, db: Session = Depends(get_db)):
+    """Register a user and return public account data.
+
+    Raises:
+        HTTPException: If the submitted email is already registered.
+    """
     try:
         return auth_service.register_user(db, request.email, request.password)
     except ValueError as error:
@@ -21,6 +26,11 @@ def register_user(request: RegisterRequest, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=AuthResponse)
 def login_user(request: LoginRequest, db: Session = Depends(get_db)):
+    """Authenticate a user and return public account data.
+
+    Raises:
+        HTTPException: If the email is unknown or the password is invalid.
+    """
     try:
         return auth_service.login_user(db, request.email, request.password)
     except ValueError as error:

@@ -1,71 +1,98 @@
 # WebStore Backend
 
-This repository contains a beginner-friendly FastAPI backend for a web store MVP.
+A beginner-friendly FastAPI backend for a web store MVP. The implemented API
+currently supports health checks and user registration/login; product browsing,
+cart management, checkout, and order history are planned next steps.
 
-The current project goal is to support a simple shopping flow: register, log in, browse products, manage a cart, place an order, and view order history.
+## Current capabilities
 
-## MVP Focus
+- FastAPI application and interactive API documentation
+- SQLAlchemy database engine and request-scoped session dependency
+- User registration and login with validated request bodies
+- PBKDF2 password hashing with a random salt and constant-time verification
+- SQLAlchemy models for users, products, carts, orders, and order items
 
-- user registration
-- user login
-- product browsing
-- cart management
-- checkout and order creation
-- order confirmation and order history
+## Run locally
 
-The project intentionally avoids advanced architecture and advanced auth features so the code stays readable and appropriate for an undergraduate full-stack project.
+Set `DATABASE_URL` to a SQLAlchemy-compatible database connection string before
+starting the app. The repository's fallback value is only a placeholder and is
+not a usable local database configuration.
 
-## Current Project State
+```powershell
+$env:DATABASE_URL = "postgresql://USER:PASSWORD@localhost:5432/webstore"
+uvicorn app.main:app --reload
+```
 
-The repository already includes:
+The API is available at `http://127.0.0.1:8000`; FastAPI's interactive
+documentation is at `/docs`.
 
-- FastAPI app setup
-- database config and session setup
-- SQLAlchemy models for users, products, cart items, orders, and order items
-- auth router and auth service foundations
-- a user repository
-- a product service
-- project planning and learning docs under `docs/`
+## Implemented endpoints
 
-## Feature Branch Guides
-
-Each planned feature branch has its own README so the scope stays small and easy to review.
-
-| Branch | README | Purpose |
+| Method | Path | Purpose |
 | --- | --- | --- |
-| `feature/db-dependency` | [`README.feature-db-dependency.md`](README.feature-db-dependency.md) | Add the reusable FastAPI database dependency |
-| `feature/auth-schemas-and-router` | [`README.feature-auth-schemas-and-router.md`](README.feature-auth-schemas-and-router.md) | Make auth endpoints usable with schemas and router wiring |
-| `feature/password-hashing` | [`README.feature-password-hashing.md`](README.feature-password-hashing.md) | Replace plain password comparison with hashing |
-| `feature/product-router` | [`README.feature-product-router.md`](README.feature-product-router.md) | Expose product listing and detail endpoints |
-| `feature/cart-router` | [`README.feature-cart-router.md`](README.feature-cart-router.md) | Implement shopping cart endpoints |
-| `feature/checkout-orders` | [`README.feature-checkout-orders.md`](README.feature-checkout-orders.md) | Implement checkout and order history |
-| `feature/docs-readme` | [`README.feature-docs-readme.md`](README.feature-docs-readme.md) | Improve onboarding and contributor docs |
+| `GET` | `/health` | Returns `{"status": "ok"}` when the application is running. |
+| `POST` | `/users/register` | Creates a user and returns public user data. |
+| `POST` | `/users/login` | Verifies a user's credentials and returns public user data. |
 
-## Recommended Branch Order
+Registration and login accept the same JSON body. Emails are trimmed and must
+be syntactically valid; passwords must be between 1 and 255 characters.
 
-1. `feature/db-dependency`
-2. `feature/auth-schemas-and-router`
-3. `feature/password-hashing`
-4. `feature/product-router`
-5. `feature/cart-router`
-6. `feature/checkout-orders`
-7. `feature/docs-readme`
+```json
+{
+  "email": "customer@example.com",
+  "password": "example-password"
+}
+```
 
-This order follows the backend dependency chain and keeps implementation steps small.
+A successful registration returns `201 Created`; successful login returns
+`200 OK`. Both responses exclude the password hash:
 
-## Useful Docs
+```json
+{
+  "id": 1,
+  "email": "customer@example.com"
+}
+```
 
-- [`docs/MVP_SCOPE.md`](docs/MVP_SCOPE.md)
-- [`docs/branch_plan.md`](docs/branch_plan.md)
-- [`docs/schema.sql`](docs/schema.sql)
-- [`docs/schema_explained.md`](docs/schema_explained.md)
-- [`docs/api_router_guide.md`](docs/api_router_guide.md)
-- [`docs/auth_service_guide.md`](docs/auth_service_guide.md)
-- [`docs/product_service_guide.md`](docs/product_service_guide.md)
+Registering an existing email returns `409 Conflict`. Invalid login credentials
+return `401 Unauthorized`, and invalid request data returns FastAPI's `422`
+validation response.
 
-## Contribution Style
+## Project layout
 
-- keep branches focused on one feature
-- keep layers simple: router, service, repository, model
-- prefer readable MVP code over complex abstractions
-- merge features back into `main` after the branch goal is complete
+```text
+app/
+  core/          Configuration and password-security helpers
+  db/            SQLAlchemy base class, engine, and session dependency
+  models/        ORM mappings for the web-store entities
+  repositories/  Database access helpers
+  routers/       HTTP endpoints
+  schemas/       Request and response models
+  services/      Application business logic
+  main.py        FastAPI application entry point
+tests/           Authentication and database-session tests
+docs/            MVP scope, schema, and beginner guides
+```
+
+## Planned work
+
+The data models and product service exist, but product routes, cart routes, and
+checkout/order routes are not yet registered with the application. The feature
+guides describe the intended implementation order and scope.
+
+## Reference documentation
+
+- [MVP scope](docs/MVP_SCOPE.md)
+- [Feature branch plan](docs/branch_plan.md)
+- [Database schema](docs/schema.sql) and [schema explanation](docs/schema_explained.md)
+- [API router guide](docs/api_router_guide.md)
+- [Authentication service guide](docs/auth_service_guide.md)
+- [Product service guide](docs/product_service_guide.md)
+- [Database configuration and session guide](docs/config_and_db_setup_guide.md)
+
+## Contribution style
+
+- Keep branches focused on one feature.
+- Preserve the simple router, service, repository, and model separation.
+- Prefer readable MVP code over unnecessary abstractions.
+- Update tests and relevant documentation with behavior changes.
