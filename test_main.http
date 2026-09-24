@@ -9,3 +9,30 @@ GET http://127.0.0.1:8000/hello/User
 Accept: application/json
 
 ###
+
+POST http://127.0.0.1:8000/users/1/cart/items
+Content-Type: application/json
+
+{
+  "product_id": 3,
+  "quantity": 2
+}
+
+###
+
+GET http://127.0.0.1:8000/users/1/cart
+
+###
+
+PATCH http://127.0.0.1:8000/users/1/cart/items/1
+Content-Type: application/json
+
+{
+  "quantity": 3
+}
+
+###
+
+DELETE http://127.0.0.1:8000/users/1/cart/items/1
+
+###

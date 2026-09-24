@@ -7,6 +7,8 @@ from app.db.base import Base
 
 
 class Product(Base):
+    """Store the catalog data used for product browsing and checkout."""
+
     __tablename__ = "products"
 
     id: Mapped[int] = mapped_column(primary_key=True)

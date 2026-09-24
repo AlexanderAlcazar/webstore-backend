@@ -19,6 +19,7 @@ That gives us a cleaner layered design:
 ```python
 from sqlalchemy.orm import Session
 
+from app.core.security import hash_password, verify_password
 from app.repositories.user_repository import create_user, get_user_by_email
 
 
@@ -27,7 +28,7 @@ def register_user(db: Session, email: str, password: str):
     if existing_user:
         raise ValueError("User already exists")
 
-    return create_user(db, email, password)
+    return create_user(db, email, hash_password(password))
 
 
 def login_user(db: Session, email: str, password: str):
@@ -35,7 +36,7 @@ def login_user(db: Session, email: str, password: str):
     if not user:
         raise ValueError("Invalid credentials")
 
-    if user.password_hash != password:
+    if not verify_password(password, user.password_hash):
         raise ValueError("Invalid credentials")
 
     return user
@@ -79,11 +80,67 @@ The repository focuses on database details:
 
 This separation makes the code easier to read, test, and extend.
 
-## 6. Password note
+## 6. Password hashing
 
-The current example still stores the incoming password directly in `password_hash` for learning simplicity.
+The auth service now hashes a password before passing it to the repository.
+The repository persists only the resulting encoded value; it never receives the
+plaintext password.
 
-That is temporary. In a real app, this should be a hashed password.
+`app/core/security.py` uses Python's built-in PBKDF2 implementation. For each
+new password, it generates a random salt and derives a key by repeatedly
+applying SHA-256. The stored text contains the PBKDF2 scheme, algorithm,
+format version, iteration count, salt, and derived key, so a later login can
+safely recreate the same derivation.
+
+During login, `verify_password` derives a key using the saved parameters and
+uses a constant-time comparison to decide whether it matches. Invalid stored
+formats and wrong passwords both return an invalid-credentials result.
+
+### Password-hashing syntax breakdown
+
+#### `hash_password(password)`
+
+This helper receives the plaintext password only long enough to create a
+database-safe hash:
+
+```python
+password_hash = hash_password(password)
+return create_user(db, email, password_hash)
+```
+
+- `password` is the value supplied in the registration request.
+- `hash_password(...)` generates a random salt, runs PBKDF2, and returns one
+  text value containing the data needed for verification.
+- `password_hash` is passed to the repository. The plaintext `password` is not
+  stored in the `users` table.
+
+An illustrative returned value looks like this:
+
+```text
+pbkdf2$v1$sha256$600000$MDEyMzQ1Njc4OWFiY2RlZg==$ZXhhbXBsZS1kZXJpdmVkLWtleS0zMi1ieXRlcw==
+```
+
+The `$` character separates the scheme, format version, algorithm, iteration
+count, encoded salt, and encoded derived key. The real salt and derived key are
+different every time a password is hashed.
+
+#### `verify_password(password, user.password_hash)`
+
+This helper checks a submitted login password against the saved hash:
+
+```python
+if not verify_password(password, user.password_hash):
+    raise ValueError("Invalid credentials")
+```
+
+- `user.password_hash` is the encoded text read from the database.
+- `verify_password(...)` uses `split("$")` to recover the saved parameters,
+  salt, and expected derived key.
+- It derives a new key from the submitted `password` with those saved
+  parameters.
+- It returns `True` only when `hmac.compare_digest(...)` finds the newly
+  derived key and saved key identical. `not` changes `True` to `False` and
+  vice versa, so the error runs only when verification fails.
 
 ## 7. Summary
 
