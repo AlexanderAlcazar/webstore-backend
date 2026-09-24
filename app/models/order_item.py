@@ -1,5 +1,5 @@
 from sqlalchemy import CheckConstraint, ForeignKey, Integer, Numeric
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
@@ -18,6 +18,7 @@ class OrderItem(Base):
     )
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     unit_price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    order: Mapped["Order"] = relationship(back_populates="items")
 
     __table_args__ = (
         CheckConstraint("quantity > 0", name="order_items_quantity_positive"),
