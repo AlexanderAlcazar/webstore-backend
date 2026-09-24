@@ -1,9 +1,14 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from typing import TYPE_CHECKING
+
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Numeric, String, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.order_item import OrderItem
 
 
 class Order(Base):
@@ -21,7 +26,12 @@ class Order(Base):
         nullable=False,
         server_default=func.now(),
     )
+    items: Mapped[list["OrderItem"]] = relationship(
+        back_populates="order",
+        cascade="all, delete-orphan",
+        order_by="OrderItem.id",
+    )
 
     __table_args__ = (
-        # optional: check total_amount >= 0
+        CheckConstraint("total_amount >= 0", name="orders_total_amount_non_negative"),
     )

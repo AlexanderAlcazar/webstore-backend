@@ -1,8 +1,8 @@
 # WebStore Backend
 
 A beginner-friendly FastAPI backend for a web store MVP. The implemented API
-currently supports health checks and user registration/login; product browsing,
-cart management, checkout, and order history are planned next steps.
+currently supports health checks, account access, product browsing, cart
+management, checkout, and order history.
 
 ## Current capabilities
 
@@ -11,6 +11,8 @@ cart management, checkout, and order history are planned next steps.
 - User registration and login with validated request bodies
 - PBKDF2 password hashing with a random salt and constant-time verification
 - SQLAlchemy models for users, products, carts, orders, and order items
+- Checkout with stock validation, cart cleanup, and immutable item prices
+- User-scoped order history
 
 ## Run locally
 
@@ -33,6 +35,8 @@ documentation is at `/docs`.
 | `GET` | `/health` | Returns `{"status": "ok"}` when the application is running. |
 | `POST` | `/users/register` | Creates a user and returns public user data. |
 | `POST` | `/users/login` | Verifies a user's credentials and returns public user data. |
+| `POST` | `/users/{user_id}/checkout` | Creates an order from the user's cart. |
+| `GET` | `/users/{user_id}/orders` | Returns the user's completed orders, newest first. |
 
 Registration and login accept the same JSON body. Emails are trimmed and must
 be syntactically valid; passwords must be between 1 and 255 characters.
@@ -76,9 +80,21 @@ docs/            MVP scope, schema, and beginner guides
 
 ## Planned work
 
-The data models and product service exist, but product routes, cart routes, and
-checkout/order routes are not yet registered with the application. The feature
-guides describe the intended implementation order and scope.
+The API supports the MVP shopping flow. The feature guides describe the
+implementation order and scope for each branch.
+
+## Checkout and order history
+
+Checkout uses the items already stored in the selected user's cart, so its
+request body is empty. A successful `POST /users/{user_id}/checkout` returns
+`201 Created` with the order ID, status, checkout-time total, timestamp, and
+item snapshots (`product_id`, `quantity`, and `unit_price`). It reduces stock
+and clears the cart in one database transaction.
+
+An empty cart returns `400 Bad Request`; unavailable or insufficient stock
+returns `409 Conflict`; and an unknown user returns `404 Not Found`. `GET
+/users/{user_id}/orders` returns that user's orders with the same item snapshots
+or an empty list when none exist.
 
 ## Reference documentation
 
